@@ -1,4 +1,4 @@
-conda create -n im2txt python=3.7 pip --yes
+conda create -n im2txt python=3.6 pip --yes
 conda activate im2txt
 
 cd ../
