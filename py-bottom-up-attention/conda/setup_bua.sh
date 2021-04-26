@@ -1,8 +1,7 @@
 conda create -n bua python=3.6 pip --yes
-source ~/anaconda3/etc/profile.d/conda.sh
 conda activate bua
 
-cd /path/to/py-bottom-up-attention
+cd ../
 
 # Install python libraries
 pip install -r requirements.txt
@@ -16,5 +15,3 @@ python setup.py build develop
 
 # or, as an alternative to `setup.py`, do
 # pip install [--editable] .
-
-echo "Done"
