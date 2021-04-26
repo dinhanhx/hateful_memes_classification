@@ -347,6 +347,7 @@ def validate(model, val_loader, split):
                     f"val Acc: {val_acc:.4f}, val AUROC: {val_auroc:.4f}")
         return val_log, results, results_logits
     else:
+        model.train()
         return {f'generate/{split}': 1}, results, results_logits
 
 
