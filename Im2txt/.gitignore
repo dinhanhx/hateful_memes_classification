@@ -6,4 +6,5 @@ checkpoint
 *.index
 *.meta
 
-__pychache__
+*/__pycache__/*
+*.pyc
