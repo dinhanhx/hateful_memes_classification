@@ -4,3 +4,4 @@
 data/
 *.pyc
 model_asset/
+*.pt
