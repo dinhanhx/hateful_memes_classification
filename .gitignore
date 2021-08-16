@@ -5,3 +5,4 @@ data/
 *.pyc
 model_asset/
 *.pt
+.ipynb_checkpoints/
