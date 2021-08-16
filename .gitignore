@@ -6,3 +6,4 @@ data/
 model_asset/
 *.pt
 .ipynb_checkpoints/
+*.zip
