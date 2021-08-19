@@ -370,6 +370,8 @@ Model names are same with model name in [my bachelor thesis publication]().
 
 ### Reproduce the best model
 
+**Shortcut**: go to release section of this repos then download `output_quadruple_dev_seen_unseen_0_imgcap_HimariO.zip` then extract to `output_quadruple_dev_seen_unseen_0_imgcap_HimariO` place in `model_asset/` folder.
+
 ```bash
 # In conda enviroment: uniter
 # In folder: UNITER
