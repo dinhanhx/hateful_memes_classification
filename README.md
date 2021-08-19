@@ -10,7 +10,18 @@
 
 This repo is my bachelor thesis project's source code. It's based on and forked from [vladsandulescu/hatefulmemes](README_BASELINE.md). As in the title, it's about my solution to [hateful memes challenge](https://hatefulmemeschallenge.com/). To come up the solution, I have read all [wining solutions](https://hatefulmemeschallenge.com/#leaderboard)'s publications. The first place and the fifth place solutions insfluenced my work most. Besides those influences, I also came up a **novel** mechanism called Multiple Directional Attention (MDA) to support [UNITER](https://github.com/ChenRocks/UNITER) in utilizing different data channels at once. MDA is the generalization of bidirectional cross-attention of the fifth solution. A data channel in this case is a pair of image and text. Text can be: meme text; caption; paraphrased meme text; context. Image is image feature (including detected objects in image). Unlike the fifth solution only using 2 data channels (`[[img, meme text], [img, caption]]`), 3 data channels were used to improve model performance. As a result, UNITER with a MDA variant achieved 0.8026 AUC ROC and 0.7510 Accuracy which is above 5th place in the challenge. 
 
-Please read [my bachelor thesis]() and [fifth place solution](README_BASELINE.md) publication to understand more.
+Please read [my bachelor thesis](https://drive.google.com/file/d/1_5aZCVhIbBs5yrkcJQJ3oLz-nFAALkcb/view?usp=sharing) and [fifth place solution](README_BASELINE.md) publication to understand more.
+
+If you use my generated data, my model's source code, my model's weight, my bachelor thesis, please use the following `biblatex` to cite
+```
+@phdthesis{vu_2021, 
+    title={Hateful memes classification}, 
+    author={VU, Dinh Anh},
+    institution={University of Science and Technology of Hanoi},
+    url={https://drive.google.com/file/d/1_5aZCVhIbBs5yrkcJQJ3oLz-nFAALkcb/view?usp=sharing},
+    year={2021}
+}
+```
 
 ## Enviroment
 
@@ -318,7 +329,7 @@ bash setup_uniter.sh
 
 ### Config files for all models in all experiments
 
-Model names are same with model name in [my bachelor thesis publication]().
+Model names are same with model name in [my bachelor thesis publication](https://drive.google.com/file/d/1_5aZCVhIbBs5yrkcJQJ3oLz-nFAALkcb/view?usp=sharing).
 
 #### Phase 1
 
