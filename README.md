@@ -112,6 +112,108 @@ python demo/hm.py --split img --split_json_file test_unseen.jsonl --d2_file_suff
 # This will split for under 30 minutes
 python spliter.py
 ```
+<details>
+    <summary>Click to see spilter.py</summary>
+
+    ```python
+    import csv
+    import numpy as np
+    import base64
+    import sys
+    import os
+
+    from tqdm import tqdm
+    from pathlib import Path
+    csv.field_size_limit(sys.maxsize)
+
+    def read_ff(feature_file, test_mode=False):
+        TRAIN_VAL_FIELDNAMES = ["id", "img", "label", "text", "img_id", "img_h", "img_w", "objects_id", "objects_conf",
+                            "attrs_id", "attrs_conf", "num_boxes", "boxes", "features"]
+        TEST_FIELDNAMES = ["id", "img", "text", "img_id", "img_h", "img_w", "objects_id", "objects_conf",
+                    "attrs_id", "attrs_conf", "num_boxes", "boxes", "features"]
+
+        with open(feature_file, mode='r', encoding='utf8') as f:
+            tsv_reader = csv.DictReader(f, delimiter='\t',
+                                        fieldnames=TRAIN_VAL_FIELDNAMES if not test_mode else TEST_FIELDNAMES)
+            data = []
+            for item in tsv_reader:
+                try:
+                    idb = {'img_id': str(item['img_id']),
+                            'img': str(item['img']),
+                            'text': str(item['text']),
+                            'label': int(item['label']) if not test_mode else None,
+                            'img_h': int(item['img_h']),
+                            'img_w': int(item['img_w']),
+                            'num_boxes': int(item['num_boxes']),
+                            'boxes': np.frombuffer(base64.decodebytes(item['boxes'].encode()),
+                                                    dtype=np.float32).reshape((int(item['num_boxes']), -1)),
+                            
+                            'features': np.frombuffer(base64.decodebytes(item['features'].encode()),
+                                                        dtype=np.float32).reshape((int(item['num_boxes']), -1))}
+                    data.append(idb)
+                except:
+                    print(f"Some error occurred reading img id {item['img_id']}")
+
+            return data
+
+    def split(data, folder_name, test_mode=False):
+        with open(f"map_{folder_name}.tsv", mode='w', encoding='utf8') as f:
+            TRAIN_VAL_FIELDNAMES = ["img", "label", "text", "img_id", "img_h", "img_w", "num_boxes", "npy"]
+            TEST_FIELDNAMES =      ["img",          "text", "img_id", "img_h", "img_w", "num_boxes", "npy"]
+
+            tsv_writer = csv.DictWriter(f, fieldnames=TRAIN_VAL_FIELDNAMES if not test_mode else TEST_FIELDNAMES, delimiter='\t')
+
+            tsv_writer.writeheader()
+            for d in tqdm(data):
+                if test_mode:
+                    tsv_writer.writerow({'img_id': d['img_id'], 
+                                            'img': d['img'],
+                                            'text': d['text'],
+                                            'img_h': d['img_h'],
+                                            'img_w': d['img_w'],
+                                            'num_boxes': d['num_boxes'], 
+                                            'npy': f"{folder_name}/{d['img_id']}.npy"})
+                else:
+                    tsv_writer.writerow({'img_id': d['img_id'], 
+                                            'img': d['img'],
+                                            'text': d['text'],
+                                            'label': d['label'],
+                                            'img_h': d['img_h'],
+                                            'img_w': d['img_w'],
+                                            'num_boxes': d['num_boxes'], 
+                                            'npy': f"{folder_name}/{d['img_id']}.npy"})
+
+                np.save(f"{folder_name}/{d['img_id']}.npy", d)
+
+        return len(os.listdir(folder_name))
+
+    if '__main__' == __name__:
+        feature_files = ['data_train_d2_10-100_vg.tsv', 
+                            'data_dev_seen_unseen_d2_10-100_vg.tsv', 
+                            'data_test_seen_d2_10-100_vg.tsv',
+                            'data_test_unseen_d2_10-100_vg.tsv']
+        for ff in feature_files:
+            print(Path(ff).exists())
+
+        data_ff = []
+        for ff in feature_files:
+            if ff == 'data_test_unseen_d2_10-100_vg.tsv':
+                data_ff.append(read_ff(ff, True))
+            else:
+                data_ff.append(read_ff(ff))
+
+        folders = ['data_train_d2_10-100_vg', 
+                    'data_dev_seen_unseen_d2_10-100_vg', 
+                    'data_test_seen_d2_10-100_vg',
+                    'data_test_unseen_d2_10-100_vg']
+
+        for data, folder in zip(data_ff, folders):
+            if 'data_test_unseen_d2_10-100_vg' == folder or 'data_test_seen_d2_10-100_vg' == folder:
+                print(split(data, folder, True))
+            else: 
+                print(split(data, folder, False))
+    ```
+</details>
 
 ### Image captioning
 
@@ -132,7 +234,6 @@ Download [annotations](https://drive.google.com/file/d/1NTaDqL2hPFGRZywBqDwkUBVf
 Then place those files `jsonl` files into `root/data/HimariO_annotations/` folder
 
 Then place `preprocess.py` into the same folder and read it then run it (in a conda enviroment that has python 3.6 and pandas)
-
 <details>
     <summary>Click to see preprocess.py</summary>
 
