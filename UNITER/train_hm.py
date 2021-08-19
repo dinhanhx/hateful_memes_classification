@@ -20,12 +20,19 @@ from horovod import torch as hvd
 from tqdm import tqdm
 
 from data import (DistributedTokenBucketSampler,
+
                   HMDataset, HMEvalDataset, HMTestDataset,
                   hm_collate, hm_eval_collate, hm_test_collate,
+
                   HMPairedDataset, HMPairedEvalDataset, HMPairedTestDataset,
                   hm_paired_collate, hm_paired_eval_collate, hm_paired_test_collate,
+
+                  HMTripleDataset, HMTripleEvalDataset, HMTripleTestDataset,
+                  hm_triple_collate, hm_triple_eval_collate, hm_triple_test_collate,
+
                   PrefetchLoader)
-from model.hm import (UniterForHm, UniterForHmPaired, UniterForHmPairedAttn)
+from model.hm import (UniterForHm, UniterForHmPaired, UniterForHmPairedAttn, 
+                        UniterTripleAttn, UniterQuadrupleAttn, UniterHextupleAttn)
 from optim import get_lr_sched
 from optim.misc import build_optimizer
 
@@ -53,7 +60,8 @@ def create_dataloader(opts, dataset_cls, collate_fn, mode='train'):
         batch_size = opts.val_batch_size
 
     dataset = dataset_cls(image_set, opts.root_path, opts.dataset_path,
-                       use_img_type=opts.use_img_type, test_mode=(mode == 'test'))
+                        opts.precomputed_boxes, opts.captions_file, opts.paraphrased_file,
+                        use_img_type=opts.use_img_type, test_mode=(mode == 'test'))
     sampler = DistributedTokenBucketSampler(
         hvd.size(), hvd.rank(), dataset.lens,
         bucket_size=BUCKET_SIZE, batch_size=batch_size,
@@ -89,10 +97,27 @@ def main(opts):
         collate_fn = hm_paired_collate
         eval_collate_fn = hm_paired_eval_collate
         test_collate_fn = hm_paired_test_collate
+    
+    elif 'triple' in opts.model or 'quadruple' in opts.model or 'hextuple' in opts.model:
+        DatasetCls = HMTripleDataset
+        EvalDatasetCls = HMTripleEvalDataset
+        TestDatasetCls = HMTripleTestDataset
+        collate_fn = hm_triple_collate
+        eval_collate_fn = hm_triple_eval_collate
+        test_collate_fn = hm_triple_test_collate
+
     if opts.model == 'paired':
         ModelCls = UniterForHmPaired
     elif opts.model == 'paired-attn':
         ModelCls = UniterForHmPairedAttn
+        
+    elif opts.model == 'triple':
+        ModelCls = UniterTripleAttn
+    elif opts.model == 'quadruple':
+        ModelCls = UniterQuadrupleAttn
+    elif opts.model == 'hextuple':
+        ModelCls = UniterHextupleAttn
+
     elif opts.model == 'cls':
         DatasetCls = HMDataset
         EvalDatasetCls = HMEvalDataset
@@ -223,7 +248,7 @@ def main(opts):
                         log, results, results_logits = validate(model, loader, split)
                         with open(f'{opts.output_dir}/results/'
                                   f'{split}_results_{global_step}_'
-                                  f'rank{rank}.csv', 'w') as f:
+                                  f'rank{rank}.csv', 'w', encoding='utf8') as f:
                             if split != 'test':
                                 f.write("id,proba,label,target\n")
                                 for id_, pred, prob, label in results:
@@ -241,7 +266,7 @@ def main(opts):
 
                         with open(f'{opts.output_dir}/results/'
                                   f'{split}_results_logits_{global_step}_'
-                                  f'rank{rank}.csv', 'w') as f:
+                                  f'rank{rank}.csv', 'w', encoding='utf8') as f:
                             if split != 'test':
                                 f.write("id,proba,label,target,logit_0,logit_1\n")
                                 for id_, pred, prob, label, logits in results_logits:
@@ -272,7 +297,7 @@ def main(opts):
         log, results, results_logits = validate(model, loader, split)
         with open(f'{opts.output_dir}/results/'
                   f'{split}_results_{global_step}_'
-                  f'rank{rank}_final.csv', 'w') as f:
+                  f'rank{rank}_final.csv', 'w', encoding='utf8') as f:
             if split != 'test':
                 f.write("id,proba,label,target\n")
                 for id_, pred, prob, label in results:
@@ -465,6 +490,10 @@ if __name__ == "__main__":
 
     # can use config files
     parser.add_argument('--config', help='JSON config files')
+
+    # config_file = parser.parse_args().config
+    # with open(config_file, 'r') as f:
+    #     args = json.load(f, object_hook=lambda d: SimpleNamespace(**d))
 
     args = parse_with_config(parser)
 

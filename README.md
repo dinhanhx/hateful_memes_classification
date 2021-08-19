@@ -308,3 +308,92 @@ LICENSE.txt
 
 ## Result reproduction
 
+### Setup
+
+```bash
+# start at root folder
+cd UNITER/conda
+bash setup_uniter.sh
+```
+
+### Config files for all models in all experiments
+
+Model names are same with model name in [my bachelor thesis publication]().
+
+#### Phase 1
+
+- [hm_caption.csv#](UNITER/config/dax/with_imgcap/train-hm-large-pa-1gpu-hpc_0_3420.json)
+
+- [hm_caption_2.csv#](UNITER/config/dax/with_imgcap/train-hm-large-pa-1gpu-hpc_0_3420_2.json)
+
+- [hm_caption.csv*](UNITER/config/dax/triple_cyclic/train-hm-base-triple-hpc_0_imgcap.json)
+
+- [hm_caption_2.csv*](UNITER/config/dax/triple_cyclic/train-hm-base-triple-hpc_0_imgcap_2.json)
+
+#### Phase 2
+
+- [bert-base-uncased, insert∗](UNITER/config/dax/triple_cyclic/train-hm-base-triple-hpc_0_imgcap.json)
+
+- [bert-base-uncased, substitute](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_bert-base-uncased_substitute.json)
+
+- [distilbert-base-uncased, insert](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_distilbert-base-uncased_insert.json)
+
+- [distilbert-base-uncased, substitute](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_distilbert-base-uncased_substitute.json)
+
+- [distilroberta-base, insert](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_distilroberta-base_insert.json)
+
+- [distilroberta-base, substitute](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_distilroberta-base_substitute.json)
+
+- [xlnet-base-cased, insert](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_xlnet-base-cased_insert.json)
+
+- [xlnet-base-cased, substitute](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_xlnet-base-cased_substitute.json)
+
+- [bert-base-cased, insert](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_bert-base-cased_insert.json)
+
+- [bert-base-cased, substitute](UNITER/config/dax/triple_cyclic/with_imgcap_nlpqug/train-hm-base-triple-hpc_0_imgcap_bert-base-cased_substitute.json)
+
+#### Phase 3
+
+- [Triple cyclic attention∗](UNITER/config/dax/triple_cyclic/train-hm-base-triple-hpc_0_imgcap.json)
+
+- [Quadruple attention](UNITER/config/dax/quadruple_attn/train-hm-base-quadruple-hpc_0_imgcap.json)
+
+- [Hextuple attention](UNITER/config/dax/hextuple_attn/train-hm-base-hextuple-hpc_0_imgcap.json)
+
+#### Phase 4
+
+- [Triple cyclic attention](UNITER/config/dax/triple_cyclic/with_imgcap_HimariO/train-hm-base-triple-hpc_0_imgcap_HimariO.json)
+
+- [Quadruple attention*](UNITER/config/dax/quadruple_attn/train-hm-base-quadruple-hpc_0_imgcap_HimariO.json)
+
+- [Hextuple attention](UNITER/config/dax/hextuple_attn/train-hm-base-hextuple-hpc_0_imgcap_HimariO.json)
+
+### Reproduce the best model
+
+```bash
+# In conda enviroment: uniter
+# In folder: UNITER
+python train_hm.py --config config/dax/quadruple_attn/train-hm-base-quadruple-hpc_0_imgcap_HimariO.json
+```
+
+### Test the best model
+
+```bash
+# In a conda enviroment that has python 3.6, pandas, click, pretty_errors, sklearn
+# In folder: py-scripts
+python calc_test.py --test_jsonl test_seen.jsonl --result_csv ../model_asset/output_quadruple_dev_seen_unseen_0_imgcap_HimariO/hm/base/results/test_results_3420_rank0_final.csv
+```
+
+**Note** this will test with `test_seen.jsonl`
+
+### Inference the best model
+
+To produce `result.csv` for `test_unseen.jsonl` do the following
+
+```bash
+# In conda enviroment: uniter
+# In folder: UNITER
+python inf_hm.py --root_path ./ --dataset_path ../data --test_image_set test --train_dir ../model_asset/output_quadruple_dev_seen_unseen_0_imgcap_HimariO --ckpt 3420 --output_dir path/to/folder/to/store/ --fp16
+```
+
+**Note**: remember to change `path/to/folder/to/store/`

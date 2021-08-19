@@ -13,22 +13,29 @@ from torch.utils.data import DataLoader
 
 from data import (HMTestDataset,
                   hm_test_collate,
+
                   HMPairedTestDataset,
                   hm_paired_test_collate,
+
+                  HMTripleTestDataset,
+                  hm_triple_test_collate,
+
                   PrefetchLoader, TokenBucketSampler)
-from model.hm import (UniterForHm, UniterForHmPaired, UniterForHmPairedAttn)
+from model.hm import (UniterForHm, UniterForHmPaired, UniterForHmPairedAttn, 
+                        UniterTripleAttn, UniterQuadrupleAttn, UniterHextupleAttn)
 from model.model import UniterConfig
 from utils.const_hm import IMG_DIM, BUCKET_SIZE
 from utils.misc import Struct
 
 
-def create_dataloader(opts, dataset_cls, collate_fn, mode='test'):
+def create_dataloader(opts, train_opts, dataset_cls, collate_fn, mode='test'):
     assert mode in ['test']
 
     image_set = opts.test_image_set
     batch_size = opts.batch_size
 
     dataset = dataset_cls(image_set, opts.root_path, opts.dataset_path,
+                          train_opts.precomputed_boxes, train_opts.captions_file, train_opts.paraphrased_file,
                           use_img_type=opts.use_img_type, test_mode=(mode == 'test'))
     sampler = TokenBucketSampler(dataset.lens, bucket_size=BUCKET_SIZE,
                                  batch_size=batch_size, droplast=False)
@@ -41,14 +48,28 @@ def create_dataloader(opts, dataset_cls, collate_fn, mode='test'):
 def main(opts):
     device = torch.device("cuda")  # support single GPU only
     train_opts = Struct(json.load(open(f'{opts.train_dir}/log/hps.json')))
+    train_opts.precomputed_boxes['test'] = "data_test_unseen_d2_10-100_vg.tsv"
 
     if 'paired' in train_opts.model:
         TestDatasetCls = HMPairedTestDataset
         test_collate_fn = hm_paired_test_collate
+
+    elif 'triple' in train_opts.model or 'quadruple' in train_opts.model or 'hextuple' in train_opts.model:
+        TestDatasetCls = HMTripleTestDataset
+        test_collate_fn = hm_triple_test_collate
+
     if train_opts.model == 'paired':
         ModelCls = UniterForHmPaired
     elif train_opts.model == 'paired-attn':
         ModelCls = UniterForHmPairedAttn
+
+    elif train_opts.model == 'triple':
+        ModelCls = UniterTripleAttn
+    elif train_opts.model == 'quadruple':
+        ModelCls = UniterQuadrupleAttn
+    elif train_opts.model == 'hextuple':
+        ModelCls = UniterHextupleAttn
+
     elif train_opts.model == 'cls':
         TestDatasetCls = HMTestDataset
         test_collate_fn = hm_test_collate
@@ -59,7 +80,7 @@ def main(opts):
     # data loaders
     opts.batch_size = (train_opts.val_batch_size if opts.batch_size is None else opts.batch_size)
     opts.use_img_type = train_opts.use_img_type
-    test_dataloader = create_dataloader(opts, TestDatasetCls, test_collate_fn, mode='test')
+    test_dataloader = create_dataloader(opts, train_opts, TestDatasetCls, test_collate_fn, mode='test')
 
     # Prepare model
     ckpt_file = f'{opts.train_dir}/ckpt/model_step_{opts.ckpt}.pt'
@@ -131,7 +152,7 @@ if __name__ == "__main__":
                         help="fp16 inference")
     parser.add_argument("--train_dir", type=str, required=True,
                         help="The directory storing HM finetuning output")
-    parser.add_argument("--ckpt", type=int, required=True,
+    parser.add_argument("--ckpt", type=str, required=True,
                         help="specify the checkpoint to run inference")
     parser.add_argument("--output_dir", type=str, required=True,
                         help="The output directory where the prediction results will be written.")
